@@ -458,21 +458,27 @@
             gsap.set(v, { rotation: changeNegative(i * oneAngle) });
         }) // 초기 inner rotate 셋팅
 
+        function findApproximate(i, currentAngle) {
+            const a = currentAngle + oneAngle * (currentIndex - i);
+            const b = a + 360;
+            const c = a - 360;
+            const arr = [a, b, c];
+
+            return arr.reduce(function (prev, curr) {
+                return (Math.abs(curr - currentAngle) < Math.abs(prev - currentAngle) ? curr : prev);
+            });
+        }
+
 
         $inner.forEach(function (v, i) {
             v.addEventListener("click", function () {
-                currentIndex = i;
                 const currentAngle = gsap.getProperty($rotatingSlider, "rotation"); //현재 rotation 값 가져오기
-                const innerCurrent = changeNegative(i * (oneAngle));
-                gsap.to($rotatingSlider, { duration: 0.5, rotation: innerCurrent }); // 클릭시 클릭한 태그로 이동
-
-                //inner rotate 자리 찾기
-                const roundAngle = Math.round((innerCurrent / (oneAngle))) * (oneAngle); // 개당각도 단위로 반올림
+                const result = findApproximate(i, currentAngle);
+                currentIndex = i;
+                gsap.to($rotatingSlider, { duration: 0.5, rotation: result });
                 for (let i = 0; i <= $labelLength; i++) {
-                    gsap.to($inner[i], { duration: 0.5, rotation: changeNegative(roundAngle + i * oneAngle) });
+                    gsap.to($inner[i], { duration: 0.5, rotation: changeNegative(result + i * oneAngle) });
                 }
-                console.log(currentIndex);
-
             })
         });
 
@@ -496,10 +502,10 @@
                     currentIndex = Math.abs((roundAngle / oneAngle) % $labelLength);
                 } else {
                     // roate가 양수 일 경우 45º(도씨)의 currentIndex 값이 7이 나오게 하라면 360도를 빼주면 됨.
-                    const rotateCount = parseInt(roundAngle / 360 + 1);
-                    currentIndex = ((rotateCount * 360 - roundAngle) / oneAngle) % $labelLength;
+                    const cycle = parseInt(roundAngle / 360 + 1);
+                    currentIndex = ((cycle * 360 - roundAngle) / oneAngle) % $labelLength;
                 }
-                console.log(currentIndex);
+                // console.log(currentIndex);
             }
         });
     </script>
