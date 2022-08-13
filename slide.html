@@ -429,9 +429,16 @@
 
     <script src="jquery.rotating-slider.js"></script>
     <script>
+
+        if (window.NodeList && !NodeList.prototype.forEach) {
+            NodeList.prototype.forEach = Array.prototype.forEach;
+        } // ie11 호환성 대비 / jquery로 변경시 삭제 가능
+
         gsap.config({ nullTargetWarn: false }); // gsap 플로그인 경고표시 무시
+        const $rotatingSlider = document.querySelector('.rotating-slider');
+
         $(function () {
-            $('.rotating-slider').rotatingSlider({
+            $($rotatingSlider).rotatingSlider({
                 slideHeight: Math.min(80, window.innerWidth),
                 slideWidth: Math.min(80, window.innerWidth),
             });
@@ -441,25 +448,28 @@
         const $inner = document.querySelectorAll('li .inner');
         const $labelLength = $label.length;
         const oneAngle = 360 / $label.length;
-        let currentIndex = 0;
+        let currentIndex = 0; // 슬라이더에서 index 값으로 이용
 
-        $inner.forEach((v, i) => {
-            gsap.set(v, { rotation: -(i * oneAngle) });
+        function changeNegative(x) { //  음수로 변환 함수
+            return x * -1;
+        }
+
+        $inner.forEach(function (v, i) {
+            gsap.set(v, { rotation: changeNegative(i * oneAngle) });
         }) // 초기 inner rotate 셋팅
 
 
         $inner.forEach(function (v, i) {
             v.addEventListener("click", function () {
                 currentIndex = i;
-                const currentAngle = gsap.getProperty(".rotating-slider", "rotation"); //현재 rotation 값 찾기
-                // console.log(currentAngle);
-                // console.log(Math.round((currentAngle / 360)) * -360);
-                const innerCurrent = -i * (oneAngle);
-                gsap.to(".rotating-slider", { duration: 0.5, rotation: innerCurrent }); // 클릭시 클릭한 태그로 이동
+                const currentAngle = gsap.getProperty($rotatingSlider, "rotation"); //현재 rotation 값 가져오기
+                const innerCurrent = changeNegative(i * (oneAngle));
+                gsap.to($rotatingSlider, { duration: 0.5, rotation: innerCurrent }); // 클릭시 클릭한 태그로 이동
 
+                //inner rotate 자리 찾기
                 const roundAngle = Math.round((innerCurrent / (oneAngle))) * (oneAngle); // 개당각도 단위로 반올림
                 for (let i = 0; i <= $labelLength; i++) {
-                    gsap.to($inner[i], { duration: 0.5, rotation: -(roundAngle + i * oneAngle) });
+                    gsap.to($inner[i], { duration: 0.5, rotation: changeNegative(roundAngle + i * oneAngle) });
                 }
                 console.log(currentIndex);
 
@@ -468,22 +478,28 @@
 
         function fallIntoPlace(currentRotate) {
             for (let i = 0; i <= $labelLength; i++) {
-                gsap.set($inner[i], { rotation: -(currentRotate + i * oneAngle) });
+                gsap.set($inner[i], { rotation: changeNegative(currentRotate + i * oneAngle) });
             }
         }
 
-        Draggable.create(".rotating-slider", {
+        Draggable.create($rotatingSlider, {
             type: "rotation",
             inertia: true,
-            onDrag: function (e) {
-                // console.log("drag")
+            onDrag: function () {
                 fallIntoPlace(this.rotation);
             },
-            onDragEnd: function (e) {
+            onDragEnd: function () {
                 const roundAngle = Math.round((this.rotation / (oneAngle))) * (oneAngle); // 개당각도 단위로 반올림
-                console.log(roundAngle);
-                gsap.to(".rotating-slider", { duration: 0.1, rotation: roundAngle }); // 타임 및 roatation 셋팅
+                gsap.to($rotatingSlider, { duration: 0.1, rotation: roundAngle }); // 타임 및 roatation 셋팅
                 fallIntoPlace(roundAngle);
+                if (roundAngle <= 0) {
+                    currentIndex = Math.abs((roundAngle / oneAngle) % $labelLength);
+                } else {
+                    // roate가 양수 일 경우 45º(도씨)의 currentIndex 값이 7이 나오게 하라면 360도를 빼주면 됨.
+                    const rotateCount = parseInt(roundAngle / 360 + 1);
+                    currentIndex = ((rotateCount * 360 - roundAngle) / oneAngle) % $labelLength;
+                }
+                console.log(currentIndex);
             }
         });
     </script>
