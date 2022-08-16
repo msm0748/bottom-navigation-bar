@@ -295,7 +295,7 @@
             bottom: 105px;
         }
 
-        .rotating-slider ul.direction-controls {
+        /* .rotating-slider ul.direction-controls {
             list-style: none;
             margin: 0;
             padding: 0;
@@ -332,7 +332,7 @@
 
         .rotating-slider ul.direction-controls li button:hover {
             background: rgba(0, 0, 0, 0.6);
-        }
+        } */
 
         .rotating-slider ul.slides {
             height: 100%;
@@ -342,8 +342,9 @@
             position: relative;
             top: 0;
             left: 50%;
-            transform: translateX(-50%) rotate(0);
-            transform-origin: center center;
+            /* transform: translateX(-50%) rotate(0); */
+            /* transform-origin: center center; */
+            border-radius: 50%;
             width: 100%;
         }
 
@@ -430,83 +431,77 @@
     <script src="jquery.rotating-slider.js"></script>
     <script>
 
-        if (window.NodeList && !NodeList.prototype.forEach) {
-            NodeList.prototype.forEach = Array.prototype.forEach;
-        } // ie11 호환성 대비 / jquery로 변경시 삭제 가능
-
         gsap.config({ nullTargetWarn: false }); // gsap 플로그인 경고표시 무시
-        const $rotatingSlider = document.querySelector('.rotating-slider');
+        const $rotatingSlider = document.querySelector('.rotating-slider ul'); // jquery 선택시 gsap 선택자 에러뜸
+        const $rotatingItem = $('.rotating-slider li');
+        const $rotatingInner = $('li .inner');
+        const $rotatingItemLength = $rotatingItem.length;
+        const oneAngle = 360 / $rotatingItem.length;
+        let currentIndex = 0; // 슬라이더에서 index 값으로 이용
+
 
         $(function () {
-            $($rotatingSlider).rotatingSlider({
+            $('.rotating-slider').rotatingSlider({
                 slideHeight: Math.min(80, window.innerWidth),
                 slideWidth: Math.min(80, window.innerWidth),
             });
-        });
+             function changeNegative(x) { //  음수로 변환 함수
+                return x * -1;
+            }
 
-        const $label = document.querySelectorAll('li');
-        const $inner = document.querySelectorAll('li .inner');
-        const $labelLength = $label.length;
-        const oneAngle = 360 / $label.length;
-        let currentIndex = 0; // 슬라이더에서 index 값으로 이용
-
-        function changeNegative(x) { //  음수로 변환 함수
-            return x * -1;
-        }
-
-        $inner.forEach(function (v, i) {
-            gsap.set(v, { rotation: changeNegative(i * oneAngle) });
-        }) // 초기 inner rotate 셋팅
-
-        function findApproximate(i, currentAngle) {
-            const a = currentAngle + oneAngle * (currentIndex - i);
-            const b = a + 360;
-            const c = a - 360;
-            const arr = [a, b, c];
-
-            return arr.reduce(function (prev, curr) {
-                return (Math.abs(curr - currentAngle) < Math.abs(prev - currentAngle) ? curr : prev);
-            });
-        }
-
-
-        $inner.forEach(function (v, i) {
-            v.addEventListener("click", function () {
-                const currentAngle = gsap.getProperty($rotatingSlider, "rotation"); //현재 rotation 값 가져오기
-                const result = findApproximate(i, currentAngle);
-                currentIndex = i;
-                gsap.to($rotatingSlider, { duration: 0.5, rotation: result });
-                for (let i = 0; i <= $labelLength; i++) {
-                    gsap.to($inner[i], { duration: 0.5, rotation: changeNegative(result + i * oneAngle) });
-                }
+            $rotatingInner.each(function (i, v) { // 초기 inner rotate 셋팅
+                gsap.set(v, { rotation: changeNegative(i * oneAngle) });
             })
-        });
 
-        function fallIntoPlace(currentRotate) {
-            for (let i = 0; i <= $labelLength; i++) {
-                gsap.set($inner[i], { rotation: changeNegative(currentRotate + i * oneAngle) });
+            function findApproximateValue(i, currentAngle) {  // 근사값 추출
+                const a = currentAngle + oneAngle * (currentIndex - i);
+                const b = a + 360;
+                const c = a - 360;
+                const arr = [a, b, c];
+
+                return arr.reduce(function (prev, curr) {
+                    return (Math.abs(curr - currentAngle) < Math.abs(prev - currentAngle) ? curr : prev);
+                });
             }
-        }
 
-        Draggable.create($rotatingSlider, {
-            type: "rotation",
-            inertia: true,
-            onDrag: function () {
-                fallIntoPlace(this.rotation);
-            },
-            onDragEnd: function () {
-                const roundAngle = Math.round((this.rotation / (oneAngle))) * (oneAngle); // 개당각도 단위로 반올림
-                gsap.to($rotatingSlider, { duration: 0.1, rotation: roundAngle }); // 타임 및 roatation 셋팅
-                fallIntoPlace(roundAngle);
-                if (roundAngle <= 0) {
-                    currentIndex = Math.abs((roundAngle / oneAngle) % $labelLength);
-                } else {
-                    // roate가 양수 일 경우 45º(도씨)의 currentIndex 값이 7이 나오게 하라면 360도를 빼주면 됨.
-                    const cycle = parseInt(roundAngle / 360 + 1);
-                    currentIndex = ((cycle * 360 - roundAngle) / oneAngle) % $labelLength;
+            $rotatingInner.on("click", function () {
+                const index = $(this).parent().index();
+                const currentAngle = gsap.getProperty($rotatingSlider, "rotation"); //현재 rotation 값 가져오기
+                const approximateValue = findApproximateValue(index, currentAngle);
+                currentIndex = index;
+                gsap.to($rotatingSlider, { duration: 0.5, rotation: approximateValue });
+                $rotatingInner.each(function (i, v) {
+                    gsap.to(v, { duration: 0.5, rotation: changeNegative(approximateValue + i * oneAngle) });
+                });
+            })
+
+            function fallIntoPlace(currentRotate) { //실시간 inner 각도 재배치
+                $rotatingInner.each(function (i, v) {
+                    gsap.set(v, { rotation: changeNegative(currentRotate + i * oneAngle) });
+                });
+            }
+
+            Draggable.create($rotatingSlider, {
+                type: "rotation",
+                inertia: true,
+                onDrag: function () {
+                    fallIntoPlace(this.rotation);
+                },
+                onDragEnd: function () {
+                    const roundAngle = Math.round((this.rotation / (oneAngle))) * (oneAngle); // 개당각도 단위로 반올림
+                    gsap.to($rotatingSlider, { duration: 0.1, rotation: roundAngle }); // 타임 및 roatation 셋팅
+                    fallIntoPlace(roundAngle);
+                    if (roundAngle <= 0) {
+                        currentIndex = Math.abs((roundAngle / oneAngle) % $rotatingItemLength);
+                    } else {
+                        // 현재 roate가 양수 일 경우 45º(도씨)의 currentIndex 값이 7이 나오게 하라면 360도를 빼주면 됨.
+                        const cycle = parseInt(roundAngle / 360 + 1);
+                        currentIndex = ((cycle * 360 - roundAngle) / oneAngle) % $rotatingItemLength;
+                    }
                 }
-                // console.log(currentIndex);
-            }
+            });
+
+
         });
     </script>
 </body>
