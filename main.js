@@ -3,11 +3,11 @@ $(document).ready(function () {
   const $visual = $(".visual");
   const $visualList = $visual.find(".visual-list");
   const $visualBtn = $visual.find(".visual_btn");
-  const $rotatingSlider = document.querySelector(".rotating-slider"); // jquery 선택시 gsap 선택자 에러뜸
-  const $label = $visual.find("li.rotating_item");
-  const $inner = $visual.find("li .inner");
-  const $labelLength = $label.length;
-  const oneAngle = 360 / $label.length;
+  const $rotatingSlider = document.querySelector(".rotating-slider ul"); // jquery 선택시 gsap 선택자 에러뜸
+  const $rotatingItem = $visual.find("li.rotating_item");
+  const $rotatingInner = $visual.find("li .inner");
+  const $rotatingItemLength = $rotatingItem.length;
+  const oneAngle = 360 / $rotatingItem.length;
   let currentIndex = 0; // 슬라이더에서 index 값으로 이용
   let slickBeforeState = false; // 방향키 풀면 방향키 컨트롤에서 꼬임
 
@@ -15,16 +15,16 @@ $(document).ready(function () {
     slidesToShow: 1,
     prevArrow: $(".visual_prev"),
     nextArrow: $(".visual_next"),
-    fade: true,
+    // fade: true,
     accessibility: false, // 방향키 컨트롤 true시 slide index 틀어짐
   });
 
-  $($rotatingSlider).rotatingSlider({
-    slideHeight: Math.min(80, window.innerWidth),
-    slideWidth: Math.min(80, window.innerWidth),
+  $(".rotating-slider").rotatingSlider({
+      slideHeight: Math.min(80, window.innerWidth),
+      slideWidth: Math.min(80, window.innerWidth),
   });
 
-  $inner.each(function (i, v) {
+  $rotatingInner.each(function (i, v) {
     gsap.set(v, { rotation: changeNegative(i * oneAngle) });
   }); // 초기 inner rotate 셋팅
 
@@ -32,13 +32,13 @@ $(document).ready(function () {
     const currentAngle = gsap.getProperty($rotatingSlider, "rotation");
     if (operator === "plus") {
       gsap.to($rotatingSlider, { duration: 0.5, rotation: currentAngle + oneAngle });
-      $inner.each(function (i, v) {
+      $rotatingInner.each(function (i, v) {
         gsap.to(v, { duration: 0.5, rotation: changeNegative(currentAngle + (i + 1) * oneAngle) });
       });
     }
     if (operator === "minus") {
       gsap.to($rotatingSlider, { duration: 0.5, rotation: currentAngle - oneAngle });
-      $inner.each(function (i, v) {
+      $rotatingInner.each(function (i, v) {
         gsap.to(v, { duration: 0.5, rotation: changeNegative(currentAngle + (i - 1) * oneAngle) });
       });
     }
@@ -92,23 +92,23 @@ $(document).ready(function () {
     });
   }
 
-  $inner.click("click", function () {
+  $rotatingInner.click("click", function () {
     const $this = $(this);
     const index = $this.parent().index();
     const currentAngle = gsap.getProperty($rotatingSlider, "rotation"); //현재 rotation 값 가져오기
-    const result = findApproximate(index, currentAngle);
+    const approximateValue = findApproximate(index, currentAngle);
     currentIndex = index;
-    gsap.to($rotatingSlider, { duration: 0.5, rotation: result });
+    gsap.to($rotatingSlider, { duration: 0.5, rotation: approximateValue });
 
-    $inner.each(function (i, v) {
-      gsap.to(v, { duration: 0.5, rotation: changeNegative(result + i * oneAngle) });
+    $rotatingInner.each(function (i, v) {
+      gsap.to(v, { duration: 0.5, rotation: changeNegative(approximateValue + i * oneAngle) });
     });
 
     $visualList.slick("slickGoTo", currentIndex);
   });
 
   function fallIntoPlace(currentRotate) {
-    $inner.each(function (i, v) {
+    $rotatingInner.each(function (i, v) {
       gsap.set(v, { rotation: changeNegative(currentRotate + i * oneAngle) });
     });
   }
@@ -129,11 +129,11 @@ $(document).ready(function () {
       gsap.to($rotatingSlider, { duration: 0.1, rotation: roundAngle }); // 타임 및 roatation 셋팅
       fallIntoPlace(roundAngle);
       if (roundAngle <= 0) {
-        currentIndex = Math.abs((roundAngle / oneAngle) % $labelLength);
+        currentIndex = Math.abs((roundAngle / oneAngle) % $rotatingItemLength);
       } else {
         // roate가 양수 일 경우 45º(도씨)의 currentIndex 값이 7이 나오게 하라면 360도를 빼주면 됨.
         const cycle = parseInt(roundAngle / 360 + 1);
-        currentIndex = ((cycle * 360 - roundAngle) / oneAngle) % $labelLength;
+        currentIndex = ((cycle * 360 - roundAngle) / oneAngle) % $rotatingItemLength;
       }
       $visualList.slick("slickGoTo", currentIndex);
     },
