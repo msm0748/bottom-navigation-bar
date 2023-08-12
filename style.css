@@ -1,0 +1,52 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+.rotating-slider {
+  margin: 0 auto;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 105px;
+}
+
+.rotating-slider ul.slides {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  top: 0;
+  left: 50%;
+  border-radius: 50%;
+  width: 100%;
+}
+
+.rotating-slider ul.slides li {
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.1);
+  background-position: center;
+  background-size: cover;
+  display: block;
+  list-style: none;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  text-align: center;
+  transform-origin: bottom center;
+  width: 100%;
+}
+
+.rotating-slider ul.slides li .inner {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  cursor: pointer;
+}

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bottom Navigation Bar</title>
+    <script src="./gasp.min.js"></script>
+    <script src="./Draggable.min.js"></script>
+    <script src="./index.js"></script>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+
+  <body>
+    <div class="rotating-slider">
+      <ul class="slides">
+        <li>
+          <div class="inner">
+            <h2>slide1</h2>
+          </div>
+          <div class="popup"></div>
+        </li>
+        <li>
+          <div class="inner">
+            <h2>slide2</h2>
+          </div>
+          <div class="popup"></div>
+        </li>
+        <li>
+          <div class="inner">
+            <h2>slide3</h2>
+          </div>
+          <div class="popup"></div>
+        </li>
+        <li>
+          <div class="inner">
+            <h2>slide4</h2>
+          </div>
+          <div class="popup"></div>
+        </li>
+        <li>
+          <div class="inner">
+            <h2>slide5</h2>
+          </div>
+          <div class="popup"></div>
+        </li>
+        <li>
+          <div class="inner">
+            <h2>slide6</h2>
+          </div>
+          <div class="popup"></div>
+        </li>
+        <li>
+          <div class="inner">
+            <h2>slide7</h2>
+          </div>
+          <div class="popup"></div>
+        </li>
+        <li>
+          <div class="inner">
+            <h2>slide8</h2>
+          </div>
+          <div class="popup"></div>
+        </li>
+      </ul>
+    </div>
+
+    <script>
+      gsap.config({ nullTargetWarn: false }); // gsap 플로그인 경고표시 무시
+      const $rotatingSlider = document.querySelector('.rotating-slider ul'); // jquery 선택시 gsap 선택자 에러뜸
+      const $rotatingItem = document.querySelectorAll('.rotating-slider li');
+      const $rotatingInner = document.querySelectorAll('li .inner');
+      const $rotatingItemLength = $rotatingItem.length;
+      const oneAngle = 360 / $rotatingItem.length;
+      let currentIndex = 0; // 슬라이더에서 index 값으로 이용
+
+      const aa = new rotatingSlider('.rotating-slider', {
+        slideHeight: Math.min(80, window.innerWidth),
+        slideWidth: Math.min(80, window.innerWidth),
+      });
+
+      function changeNegative(x) {
+        //  음수로 변환 함수
+        return x * -1;
+      }
+
+      $rotatingInner.forEach(function (v, i) {
+        // 초기 inner rotate 셋팅
+        gsap.set(v, { rotation: changeNegative(i * oneAngle) });
+      });
+
+      function findApproximateValue(i, currentAngle) {
+        // 근사값 추출
+        const a = currentAngle + oneAngle * (currentIndex - i);
+        const b = a + 360;
+        const c = a - 360;
+        const arr = [a, b, c];
+
+        return arr.reduce(function (prev, curr) {
+          return Math.abs(curr - currentAngle) < Math.abs(prev - currentAngle) ? curr : prev;
+        });
+      }
+
+      $rotatingInner.forEach(function (v, i) {
+        v.addEventListener('click', function () {
+          const index = i;
+          const currentAngle = gsap.getProperty($rotatingSlider, 'rotation'); //현재 rotation 값 가져오기
+          const approximateValue = findApproximateValue(index, currentAngle);
+          currentIndex = index;
+          gsap.to($rotatingSlider, { duration: 0.5, rotation: approximateValue });
+          $rotatingInner.forEach(function (v, i) {
+            gsap.to(v, { duration: 0.5, rotation: changeNegative(approximateValue + i * oneAngle) });
+          });
+        });
+      });
+
+      function fallIntoPlace(currentRotate) {
+        //실시간 inner 각도 재배치
+        $rotatingInner.forEach(function (v, i) {
+          gsap.set(v, { rotation: changeNegative(currentRotate + i * oneAngle) });
+        });
+      }
+
+      Draggable.create($rotatingSlider, {
+        type: 'rotation',
+        inertia: true,
+        onDrag: function () {
+          fallIntoPlace(this.rotation);
+        },
+        onDragEnd: function () {
+          const roundAngle = Math.round(this.rotation / oneAngle) * oneAngle; // 개당각도 단위로 반올림
+          gsap.to($rotatingSlider, { duration: 0.1, rotation: roundAngle }); // 타임 및 roatation 셋팅
+          fallIntoPlace(roundAngle);
+          if (roundAngle <= 0) {
+            currentIndex = Math.abs((roundAngle / oneAngle) % $rotatingItemLength);
+          } else {
+            // 현재 roate가 양수 일 경우 45º(도씨)의 currentIndex 값이 7이 나오게 하라면 360도를 빼주면 됨.
+            const cycle = parseInt(roundAngle / 360 + 1);
+            currentIndex = ((cycle * 360 - roundAngle) / oneAngle) % $rotatingItemLength;
+          }
+        },
+      });
+    </script>
+  </body>
+</html>
